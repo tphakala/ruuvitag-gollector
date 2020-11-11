@@ -21,12 +21,14 @@ type mockSQSClient struct {
 	t *testing.T
 }
 
-func (m *mockSQSClient) SendMessageWithContext(ctx aws.Context, input *sqs.SendMessageInput, opts ...request.Option) (*sqs.SendMessageOutput, error) {
+func (m *mockSQSClient) SendMessageBatchWithContext(ctx aws.Context, input *sqs.SendMessageBatchInput, opts ...request.Option) (*sqs.SendMessageBatchOutput, error) {
+	require.Len(m.t, input.Entries, 1)
+	entry := input.Entries[0]
 	assert := assert.New(m.t)
-	assert.Equal("CC:CA:7E:52:CC:34", *input.MessageAttributes["mac"].StringValue)
-	assert.Equal("Backyard", *input.MessageAttributes["name"].StringValue)
-	assert.Equal("{\"mac\":\"CC:CA:7E:52:CC:34\",\"name\":\"Backyard\",\"temperature\":21.5,\"humidity\":60,\"pressure\":1002,\"battery_voltage\":50,\"acceleration_x\":0,\"acceleration_y\":0,\"acceleration_z\":0,\"movement_counter\":1,\"measurement_number\":0,\"ts\":\"2020-01-01T00:00:00Z\"}", *input.MessageBody)
-	return &sqs.SendMessageOutput{}, nil
+	assert.Equal("CC:CA:7E:52:CC:34", *entry.MessageAttributes["mac"].StringValue)
+	assert.Equal("Backyard", *entry.MessageAttributes["name"].StringValue)
+	assert.Equal("{\"mac\":\"CC:CA:7E:52:CC:34\",\"name\":\"Backyard\",\"temperature\":21.5,\"humidity\":60,\"pressure\":1002,\"battery_voltage\":50,\"acceleration_x\":0,\"acceleration_y\":0,\"acceleration_z\":0,\"movement_counter\":1,\"measurement_number\":0,\"ts\":\"2020-01-01T00:00:00Z\"}", *entry.MessageBody)
+	return &sqs.SendMessageBatchOutput{}, nil
 }
 
 func TestExport(t *testing.T) {

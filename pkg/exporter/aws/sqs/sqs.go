@@ -4,13 +4,16 @@ package sqs
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
+	"hash/fnv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awssqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+
 	"github.com/niktheblak/ruuvitag-gollector/pkg/exporter"
 	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
@@ -62,32 +65,45 @@ func (e *sqsExporter) Name() string {
 	return "AWS SQS"
 }
 
-func (e *sqsExporter) Export(ctx context.Context, data sensor.Data) error {
-	body, err := json.Marshal(data)
-	if err != nil {
-		return err
+func (e *sqsExporter) Export(ctx context.Context, data ...sensor.Data) error {
+	if len(data) == 0 {
+		return exporter.ErrNoMeasurements
 	}
-	input := &awssqs.SendMessageInput{
-		MessageAttributes: map[string]*awssqs.MessageAttributeValue{
-			"mac": {
-				DataType:    aws.String("String"),
-				StringValue: aws.String(data.Addr),
+	var entries []*awssqs.SendMessageBatchRequestEntry
+	for _, m := range data {
+		body, err := json.Marshal(m)
+		if err != nil {
+			return err
+		}
+		entries = append(entries, &awssqs.SendMessageBatchRequestEntry{
+			Id: aws.String(getID(body)),
+			MessageAttributes: map[string]*awssqs.MessageAttributeValue{
+				"mac": {
+					DataType:    aws.String("String"),
+					StringValue: aws.String(m.Addr),
+				},
+				"name": {
+					DataType:    aws.String("String"),
+					StringValue: aws.String(m.Name),
+				},
 			},
-			"name": {
-				DataType:    aws.String("String"),
-				StringValue: aws.String(data.Name),
-			},
-		},
-		MessageBody: aws.String(string(body)),
-		QueueUrl:    aws.String(e.queueUrl),
+			MessageBody: aws.String(string(body)),
+		})
 	}
-	_, err = e.sqs.SendMessageWithContext(ctx, input)
-	if err != nil {
-		return err
+	input := &awssqs.SendMessageBatchInput{
+		Entries:  entries,
+		QueueUrl: aws.String(e.queueUrl),
 	}
-	return nil
+	_, err := e.sqs.SendMessageBatchWithContext(ctx, input)
+	return err
 }
 
 func (e *sqsExporter) Close() error {
 	return nil
+}
+
+func getID(data []byte) string {
+	h := fnv.New64()
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
 }

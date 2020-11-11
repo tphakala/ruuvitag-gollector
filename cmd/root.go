@@ -229,10 +229,9 @@ func run(cmd *cobra.Command, args []string) error {
 		exporters = append(exporters, exp)
 	}
 	if viper.GetBool("postgres.enabled") {
-		ctx := context.Background()
 		connStr := viper.GetString("postgres.conn")
 		table := viper.GetString("postgres.table")
-		exp, err := postgres.New(ctx, connStr, table)
+		exp, err := postgres.New(connStr, table)
 		if err != nil {
 			return fmt.Errorf("failed to create PostgreSQL exporter: %w", err)
 		}

@@ -46,7 +46,7 @@ func (e *influxdbExporter) Name() string {
 	return "InfluxDB"
 }
 
-func (e *influxdbExporter) Export(ctx context.Context, data sensor.Data) error {
+func (e *influxdbExporter) Export(ctx context.Context, data ...sensor.Data) error {
 	conf := influx.BatchPointsConfig{
 		Database: e.database,
 	}
@@ -54,10 +54,29 @@ func (e *influxdbExporter) Export(ctx context.Context, data sensor.Data) error {
 	if err != nil {
 		return err
 	}
-	point, err := influx.NewPoint(e.measurement, map[string]string{
+	for _, m := range data {
+		point, err := e.toPoint(m)
+		if err != nil {
+			return err
+		}
+		bp.AddPoint(point)
+	}
+	return e.client.Write(bp)
+}
+
+func (e *influxdbExporter) Close() error {
+	return e.client.Close()
+}
+
+func (e *influxdbExporter) toPoint(data sensor.Data) (*influx.Point, error) {
+	return influx.NewPoint(e.measurement, map[string]string{
 		"mac":  strings.ToUpper(data.Addr),
 		"name": data.Name,
-	}, map[string]interface{}{
+	}, toMap(data), data.Timestamp)
+}
+
+func toMap(data sensor.Data) map[string]interface{} {
+	return map[string]interface{}{
 		"temperature":        data.Temperature,
 		"humidity":           data.Humidity,
 		"dew_point":          data.DewPoint,
@@ -69,11 +88,5 @@ func (e *influxdbExporter) Export(ctx context.Context, data sensor.Data) error {
 		"acceleration_z":     data.AccelerationZ,
 		"movement_counter":   data.MovementCounter,
 		"measurement_number": data.MeasurementNumber,
-	}, data.Timestamp)
-	bp.AddPoint(point)
-	return e.client.Write(bp)
-}
-
-func (e *influxdbExporter) Close() error {
-	return e.client.Close()
+	}
 }

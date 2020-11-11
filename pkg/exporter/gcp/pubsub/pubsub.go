@@ -40,21 +40,29 @@ func (e *pubsubExporter) Name() string {
 	return "Google Pub/Sub"
 }
 
-func (e *pubsubExporter) Export(ctx context.Context, data sensor.Data) error {
-	data.Addr = strings.ToUpper(data.Addr)
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return err
+func (e *pubsubExporter) Export(ctx context.Context, data ...sensor.Data) error {
+	if len(data) == 0 {
+		return exporter.ErrNoMeasurements
 	}
-	msg := &pubsub.Message{
-		Data: jsonData,
-		Attributes: map[string]string{
-			"mac":  strings.ToUpper(data.Addr),
-			"name": data.Name,
-		},
+	for _, m := range data {
+		m.Addr = strings.ToUpper(m.Addr)
+		jsonData, err := json.Marshal(m)
+		if err != nil {
+			return err
+		}
+		msg := &pubsub.Message{
+			Data: jsonData,
+			Attributes: map[string]string{
+				"mac":  strings.ToUpper(m.Addr),
+				"name": m.Name,
+			},
+		}
+		_, err = e.topic.Publish(ctx, msg).Get(ctx)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = e.topic.Publish(ctx, msg).Get(ctx)
-	return err
+	return nil
 }
 
 func (e *pubsubExporter) Close() error {

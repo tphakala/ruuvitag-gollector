@@ -49,16 +49,26 @@ func (e *dynamoDBExporter) Name() string {
 	return "AWS DynamoDB"
 }
 
-func (e *dynamoDBExporter) Export(ctx context.Context, data sensor.Data) error {
-	item, err := dynamodbattribute.MarshalMap(data)
-	if err != nil {
-		return err
+func (e *dynamoDBExporter) Export(ctx context.Context, data ...sensor.Data) error {
+	if len(data) == 0 {
+		return exporter.ErrNoMeasurements
 	}
-	input := &dynamodb.PutItemInput{
-		Item:      item,
-		TableName: aws.String(e.table),
+	var items []*dynamodb.WriteRequest
+	for _, m := range data {
+		item, err := dynamodbattribute.MarshalMap(m)
+		if err != nil {
+			return err
+		}
+		items = append(items, &dynamodb.WriteRequest{
+			PutRequest: &dynamodb.PutRequest{Item: item},
+		})
 	}
-	_, err = e.db.PutItemWithContext(ctx, input)
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]*dynamodb.WriteRequest{
+			e.table: items,
+		},
+	}
+	_, err := e.db.BatchWriteItemWithContext(ctx, input)
 	if err != nil {
 		return err
 	}

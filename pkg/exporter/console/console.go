@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/niktheblak/ruuvitag-gollector/pkg/exporter"
 
 	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
@@ -15,12 +16,17 @@ func (e Exporter) Name() string {
 	return "Console"
 }
 
-func (e Exporter) Export(ctx context.Context, data sensor.Data) error {
-	j, err := json.MarshalIndent(data, "", "    ")
-	if err != nil {
-		return err
+func (e Exporter) Export(ctx context.Context, data ...sensor.Data) error {
+	if len(data) == 0 {
+		return exporter.ErrNoMeasurements
 	}
-	fmt.Println(string(j))
+	for _, m := range data {
+		j, err := json.MarshalIndent(m, "", "    ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(j))
+	}
 	return nil
 }
 

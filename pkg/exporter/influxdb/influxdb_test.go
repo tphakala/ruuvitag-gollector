@@ -29,8 +29,7 @@ func TestReport(t *testing.T) {
 		Addr: srv.URL,
 	})
 	require.NoError(t, err)
-	ctx := context.Background()
-	err = exporter.Export(ctx, sensor.Data{
+	data := sensor.Data{
 		Addr:           "CC:CA:7E:52:CC:34",
 		Name:           "Backyard",
 		Temperature:    22.1,
@@ -42,6 +41,7 @@ func TestReport(t *testing.T) {
 		AccelerationY:  0,
 		AccelerationZ:  0,
 		Timestamp:      time.Date(2019, time.October, 1, 10, 0, 0, 0, time.UTC),
-	})
+	}
+	err = exporter.Export(context.Background(), data)
 	require.NoError(t, err)
 }

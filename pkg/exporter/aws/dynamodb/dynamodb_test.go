@@ -11,9 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
 
 type mockDynamoDBClient struct {
@@ -21,13 +22,16 @@ type mockDynamoDBClient struct {
 	t *testing.T
 }
 
-func (m *mockDynamoDBClient) PutItemWithContext(ctx aws.Context, input *dynamodb.PutItemInput, opts ...request.Option) (*dynamodb.PutItemOutput, error) {
+func (m *mockDynamoDBClient) BatchWriteItemWithContext(ctx aws.Context, input *dynamodb.BatchWriteItemInput, opts ...request.Option) (*dynamodb.BatchWriteItemOutput, error) {
+	requests := input.RequestItems["test_table"]
+	require.Len(m.t, requests, 1)
+	item := requests[0].PutRequest.Item
 	assert := assert.New(m.t)
-	assert.Equal("CC:CA:7E:52:CC:34", *input.Item["mac"].S)
-	assert.Equal("Backyard", *input.Item["name"].S)
-	assert.Equal("21.5", *input.Item["temperature"].N)
-	assert.Equal("2020-01-01T00:00:00Z", *input.Item["ts"].S)
-	return &dynamodb.PutItemOutput{}, nil
+	assert.Equal("CC:CA:7E:52:CC:34", *item["mac"].S)
+	assert.Equal("Backyard", *item["name"].S)
+	assert.Equal("21.5", *item["temperature"].N)
+	assert.Equal("2020-01-01T00:00:00Z", *item["ts"].S)
+	return &dynamodb.BatchWriteItemOutput{}, nil
 }
 
 func TestExport(t *testing.T) {
