@@ -166,6 +166,11 @@ func run(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to create MQTT exporter: %w", err)
 		}
 	}
+	if viper.GetBool("graphite.enabled") {
+		if err := addGraphiteExporter(&exporters); err != nil {
+			return fmt.Errorf("failed to create Graphite exporter: %w", err)
+		}
+	}
 	device = viper.GetString("device")
 	return nil
 }

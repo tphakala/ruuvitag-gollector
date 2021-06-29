@@ -29,7 +29,7 @@ type graphiteExporter struct {
 	interval    time.Duration
 }
 
-func New(cfg Config) (exporter.Exporter, error) {
+func New(cfg Config) exporter.Exporter {
 	client := &http.Client{
 		Timeout: cfg.Timeout,
 	}
@@ -43,7 +43,7 @@ func New(cfg Config) (exporter.Exporter, error) {
 		apiKey:      fmt.Sprintf("%s:%s", cfg.OrgID, cfg.Token),
 		measurement: cfg.Measurement,
 		interval:    interval,
-	}, nil
+	}
 }
 
 func (e *graphiteExporter) Name() string {
