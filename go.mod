@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.0
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
+	golang.org/x/net v0.17.0 // indirect
 	google.golang.org/api v0.54.0 // indirect
 	google.golang.org/genproto v0.0.0-20210821163610-241b8fcbd6c8 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
@@ -58,8 +58,8 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
